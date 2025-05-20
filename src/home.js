@@ -1,122 +1,186 @@
 import React from "react";
+import AdminKey from "./AdminKey";
+import StatusPanel from "./StatusPanel";
+import ControlPanel from "./ControlPanel";
+import ReportPanel from "./ReportPanel";
 
-class Home extends React.Component {
+export default class Home extends React.Component {
   constructor(props) {
     super(props);
+
+    const widgets = JSON.parse(localStorage.getItem("widgetLayout") || "[]");
+    const isAdmin = sessionStorage.getItem("isAdmin") === "yes";
+
     this.state = {
-      password: "",
-      isAdmin: false,
+      activePanel: "status",
+      isAdmin,
       running: false,
-      error: "",
+      settings: { epochs: 10 },
+      widgets,
     };
   }
 
-  handleInputChange = (e) => {
-    this.setState({ password: e.target.value, error: "" });
-  };
-
-  handleLogin = (e) => {
-    e.preventDefault();
-    // For demo: hardcoded password is "letmein"
-    if (this.state.password === "letmein") {
-      this.setState({ isAdmin: true, error: "" });
-    } else {
-      this.setState({ error: "Invalid password!" });
+  componentDidMount() {
+    const isDev = process.env.REACT_APP_ENV === "development";
+    if (isDev) {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = "https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css";
+      document.head.appendChild(link);
+      this.bulmaLink = link;
     }
+  }
+
+  componentWillUnmount() {
+    if (this.bulmaLink) {
+      document.head.removeChild(this.bulmaLink);
+    }
+  }
+
+  handleLogin = (password) => {
+    if (password === "letmein") {
+      sessionStorage.setItem("isAdmin", "yes");
+      this.setState({ isAdmin: true });
+      console.log(
+        "Login successful, sessionStorage set:",
+        sessionStorage.getItem("isAdmin")
+      );
+      return true;
+    }
+    return false;
   };
 
-  handleRun = () => {
-    this.setState({ running: true });
-    // TODO: trigger backend "run" experiment via API/WebSocket
+  handleLogout = () => {
+    console.log(
+      "Before logout, sessionStorage:",
+      sessionStorage.getItem("isAdmin")
+    );
+    sessionStorage.removeItem("isAdmin");
+    this.setState({ isAdmin: false }, () => {
+      console.log(
+        "After logout, sessionStorage:",
+        sessionStorage.getItem("isAdmin")
+      );
+      console.log("State after logout:", this.state.isAdmin);
+    });
   };
 
-  handleStop = () => {
-    this.setState({ running: false });
-    // TODO: trigger backend "stop" experiment via API/WebSocket
+  switchPanel = (panel) => this.setState({ activePanel: panel });
+
+  addWidget = () => {
+    const widget = {
+      id: Date.now(),
+      title: `Widget ${this.state.widgets.length + 1}`,
+    };
+    const widgets = [...this.state.widgets, widget];
+    this.setState({ widgets }, () =>
+      localStorage.setItem("widgetLayout", JSON.stringify(this.state.widgets))
+    );
   };
+
+  runExp = () => this.setState({ running: true });
+  stopExp = () => this.setState({ running: false });
+  handleSettingChange = (e) =>
+    this.setState({
+      settings: { ...this.state.settings, [e.target.name]: e.target.value },
+    });
 
   render() {
-    const { password, isAdmin, running, error } = this.state;
+    const { activePanel, isAdmin, running, widgets, settings } = this.state;
+
     return (
-      <div className="section">
-        <div className="container">
-          <h2 className="title is-3 has-text-centered">Experiment Dashboard</h2>
-          {!isAdmin ? (
-            <form
-              className="box"
-              style={{ maxWidth: 360, margin: "2rem auto" }}
-              onSubmit={this.handleLogin}
+      <div className="container is-fluid has-background-black-ter">
+        <div
+          className="box has-background-black-ter"
+          style={{ padding: "1.5rem", boxShadow: "none" }}
+        >
+          <div className="buttons block">
+            <button
+              className={`button ${
+                activePanel === "status" ? "is-primary" : "is-dark"
+              }`}
+              onClick={() => this.switchPanel("status")}
             >
-              <div className="field">
-                <label className="label">Admin Password</label>
-                <div className="control">
-                  <input
-                    type="password"
-                    className="input"
-                    value={password}
-                    onChange={this.handleInputChange}
-                    placeholder="Enter password"
-                  />
-                </div>
-              </div>
-              {error && <p className="has-text-danger">{error}</p>}
-              <button type="submit" className="button is-link is-fullwidth">
-                Log In
-              </button>
-              <p
-                className="help has-text-centered"
-                style={{ marginTop: "1rem" }}
-              >
-                Enter password to enable admin controls.
-              </p>
-            </form>
-          ) : (
-            <div className="box" style={{ maxWidth: 500, margin: "2rem auto" }}>
-              <p className="subtitle is-5">
-                <strong>Experiment Status:</strong>{" "}
-                {running ? (
-                  <span className="has-text-success">Running</span>
-                ) : (
-                  <span className="has-text-danger">Stopped</span>
-                )}
-              </p>
-              <div className="buttons is-centered">
-                <button
-                  className="button is-success"
-                  disabled={running}
-                  onClick={this.handleRun}
-                >
-                  Run
-                </button>
-                <button
-                  className="button is-danger"
-                  disabled={!running}
-                  onClick={this.handleStop}
-                >
-                  Stop
-                </button>
-              </div>
-              <p
-                className="help has-text-centered"
-                style={{ marginTop: "1rem" }}
-              >
-                Admin controls enabled. You can now run or stop experiments.
-              </p>
+              Status
+            </button>
+            <button
+              className={`button ${
+                activePanel === "control" ? "is-primary" : "is-dark"
+              }`}
+              onClick={() => this.switchPanel("control")}
+            >
+              Control
+            </button>
+            <button
+              className={`button ${
+                activePanel === "report" ? "is-primary" : "is-dark"
+              }`}
+              onClick={() => this.switchPanel("report")}
+            >
+              Report
+            </button>
+
+            <div className="block">
+              <AdminKey
+                isAdmin={isAdmin}
+                onLogin={this.handleLogin}
+                onLogout={this.handleLogout}
+              />
             </div>
-          )}
-          {!isAdmin && (
+          </div>
+
+          <div
+            className="box"
+            style={{
+              height: "100%", // Fixed height instead of minHeight
+              width: "100%",
+              overflowY: "auto",
+              position: "relative", // For absolute positioning of children
+            }}
+          >
             <div
-              className="notification is-info has-text-centered"
-              style={{ maxWidth: 500, margin: "2rem auto" }}
+              style={{
+                display: activePanel === "status" ? "block" : "none",
+              }}
             >
-              <strong>Guest Mode:</strong> Dashboard is in view-only mode until
-              admin logs in.
+              <StatusPanel widgets={widgets} addWidget={this.addWidget} />
             </div>
-          )}
+            <div
+              style={{
+                display: activePanel === "control" ? "block" : "none",
+
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                overflowY: "auto",
+              }}
+            >
+              <ControlPanel
+                isAdmin={isAdmin}
+                running={running}
+                settings={settings}
+                onRun={this.runExp}
+                onStop={this.stopExp}
+                onSettingChange={this.handleSettingChange}
+              />
+            </div>
+            <div
+              style={{
+                display: activePanel === "report" ? "block" : "none",
+
+                top: 0,
+                left: 0,
+                width: "100%",
+
+                overflowY: "auto",
+              }}
+            >
+              <ReportPanel />
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 }
-
-export default Home;
