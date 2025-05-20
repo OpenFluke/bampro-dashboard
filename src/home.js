@@ -21,6 +21,7 @@ export default class Home extends React.Component {
   }
 
   componentDidMount() {
+    // ✅ Inject Bulma dynamically in development
     const isDev = process.env.REACT_APP_ENV === "development";
     if (isDev) {
       const link = document.createElement("link");
@@ -29,11 +30,44 @@ export default class Home extends React.Component {
       document.head.appendChild(link);
       this.bulmaLink = link;
     }
+
+    // ✅ WebSocket URL targeting :9001 (same for dev and prod)
+    const wsUrl = `ws://${window.location.hostname}:9001/ws/status`;
+    this.socket = new WebSocket(wsUrl);
+
+    // ✅ Handle WebSocket connection events
+    this.socket.onopen = () => {
+      console.log("✅ WebSocket connected to", wsUrl);
+    };
+
+    this.socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log("📡 WebSocket message received:", data);
+
+        // You could forward `data` into state or a panel component
+        // e.g., this.setState({ latestStatus: data });
+      } catch (err) {
+        console.warn("⚠️ Invalid WebSocket message:", event.data);
+      }
+    };
+
+    this.socket.onerror = (err) => {
+      console.error("❌ WebSocket error:", err);
+    };
+
+    this.socket.onclose = () => {
+      console.log("⚠️ WebSocket disconnected");
+    };
   }
 
   componentWillUnmount() {
     if (this.bulmaLink) {
       document.head.removeChild(this.bulmaLink);
+    }
+
+    if (this.socket) {
+      this.socket.close();
     }
   }
 
@@ -130,7 +164,7 @@ export default class Home extends React.Component {
           </div>
 
           <div
-            className="box"
+            className="box has-background-black-ter"
             style={{
               height: "100%", // Fixed height instead of minHeight
               width: "100%",
@@ -139,6 +173,7 @@ export default class Home extends React.Component {
             }}
           >
             <div
+              className="has-background-black-ter"
               style={{
                 display: activePanel === "status" ? "block" : "none",
               }}
