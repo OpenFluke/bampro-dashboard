@@ -42,12 +42,30 @@ export default class Home extends React.Component {
 
     this.socket.onmessage = (event) => {
       try {
-        const data = JSON.parse(event.data);
-        if (data.total_cubes !== undefined && data.planets) {
-          this.setState({ status: data });
+        const message = JSON.parse(event.data);
+
+        // ✅ Ensure message has a type
+        if (!message.type || !message.data) {
+          console.warn("⚠️ Unrecognized WS message:", message);
+          return;
+        }
+
+        switch (message.type) {
+          case "status_update":
+            this.setState({ status: message.data });
+            break;
+          case "experiment_config":
+            this.setState({ settings: message.data });
+            break;
+          case "heartbeat":
+            console.log("💓 Server ping:", message.data.message);
+            break;
+
+          default:
+            console.log("📦 Unknown message type received:", message.type);
         }
       } catch (err) {
-        console.warn("Bad WebSocket message:", event.data);
+        console.warn("❌ Failed to parse WebSocket message:", event.data);
       }
     };
 
@@ -69,6 +87,23 @@ export default class Home extends React.Component {
       this.socket.close();
     }
   }
+
+  sendControlMessage = (action, payload) => {
+    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+      console.warn("⚠️ WebSocket not connected, cannot send:", action);
+      return;
+    }
+
+    const message = {
+      type: "experiment_control",
+      data: {
+        action,
+        payload,
+      },
+    };
+
+    this.socket.send(JSON.stringify(message));
+  };
 
   handleLogin = (password) => {
     if (password === "letmein") {
@@ -199,6 +234,7 @@ export default class Home extends React.Component {
                 onRun={this.runExp}
                 onStop={this.stopExp}
                 onSettingChange={this.handleSettingChange}
+                sendControlMessage={this.sendControlMessage}
               />
             </div>
             <div
