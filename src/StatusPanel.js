@@ -1,38 +1,94 @@
-// src/components/StatusPanel.jsx
 import React from "react";
-
-class WidgetBox extends React.Component {
-  render() {
-    const { title } = this.props;
-    return (
-      <div className="box has-background-light" style={{ height: "180px" }}>
-        <p className="has-text-weight-semibold mb-2">{title}</p>
-        <p className="has-text-centered">
-          <em>Placeholder for live graph</em>
-        </p>
-      </div>
-    );
-  }
-}
+import WidgetBox from "./WidgetBox";
 
 export default class StatusPanel extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      searchTerm: "",
+    };
+  }
+
+  handleSearchChange = (e) => {
+    this.setState({ searchTerm: e.target.value.toLowerCase() });
+  };
+
   render() {
-    const { widgets, addWidget } = this.props;
+    const { status, ws } = this.props;
+    const { searchTerm } = this.state;
+
+    const planets = Array.isArray(status?.planets)
+      ? [...status.planets].sort((a, b) => {
+          // Sort by name, then fallback to host+port
+          const aName = a.name || `${a.host}:${a.port}`;
+          const bName = b.name || `${b.host}:${b.port}`;
+          return aName.localeCompare(bName);
+        })
+      : [];
+
+    const filteredPlanets = planets.filter((planet) => {
+      const id = planet.name || `${planet.host}:${planet.port}`;
+      return id.toLowerCase().includes(searchTerm);
+    });
+
     return (
       <>
-        <button className="button is-link mb-4" onClick={addWidget}>
-          + Add Widget
-        </button>
+        <div className="field mb-4">
+          <div className="control">
+            <input
+              className="input"
+              type="text"
+              placeholder="Search planets..."
+              value={this.state.searchTerm}
+              onChange={this.handleSearchChange}
+            />
+          </div>
+        </div>
 
         <div className="columns is-multiline">
-          {widgets.map((w) => (
-            <div
-              key={w.id}
-              className="column is-full-mobile is-half-tablet is-one-third-desktop"
-            >
-              <WidgetBox title={w.title} />
-            </div>
-          ))}
+          <div className="column is-one-third">
+            <WidgetBox
+              title="🛰️ System Overview"
+              ws={ws}
+              contentType="overview"
+              status={status}
+            />
+          </div>
+
+          <div className="column is-one-third">
+            <WidgetBox
+              title="🪐 Planet List"
+              ws={ws}
+              contentType="planetList"
+              status={status}
+            />
+          </div>
+
+          <div className="column is-one-third">
+            <WidgetBox
+              title="📊 Cube Distribution"
+              ws={ws}
+              contentType="cubeHosts"
+              status={status}
+            />
+          </div>
+
+          {filteredPlanets.map((planet) => {
+            const key = `${planet.name || "planet"}-${planet.host}:${
+              planet.port
+            }`;
+            return (
+              <div key={key} className="column is-one-third">
+                <WidgetBox
+                  title={`🌍 ${planet.name || "Unnamed Planet"}`}
+                  ws={ws}
+                  contentType="singlePlanet"
+                  status={status}
+                  planet={planet}
+                />
+              </div>
+            );
+          })}
         </div>
       </>
     );

@@ -43,12 +43,11 @@ export default class Home extends React.Component {
     this.socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log("📡 WebSocket message received:", data);
-
-        // You could forward `data` into state or a panel component
-        // e.g., this.setState({ latestStatus: data });
+        if (data.total_cubes !== undefined && data.planets) {
+          this.setState({ status: data });
+        }
       } catch (err) {
-        console.warn("⚠️ Invalid WebSocket message:", event.data);
+        console.warn("Bad WebSocket message:", event.data);
       }
     };
 
@@ -178,7 +177,9 @@ export default class Home extends React.Component {
                 display: activePanel === "status" ? "block" : "none",
               }}
             >
-              <StatusPanel widgets={widgets} addWidget={this.addWidget} />
+              {activePanel === "status" && (
+                <StatusPanel status={this.state.status} ws={this.socket} />
+              )}
             </div>
             <div
               style={{
