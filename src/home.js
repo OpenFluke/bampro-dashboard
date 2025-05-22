@@ -17,6 +17,8 @@ export default class Home extends React.Component {
       running: false,
       settings: { epochs: 10 },
       widgets,
+      runningUpdates: [],
+      scores: [],
     };
   }
 
@@ -59,6 +61,15 @@ export default class Home extends React.Component {
             break;
           case "heartbeat":
             console.log("💓 Server ping:", message.data.message);
+            break;
+          case "running_update":
+            this.setState((prev) => ({
+              runningUpdates: [...(prev.runningUpdates || []), ...message.data],
+            }));
+            break;
+
+          case "scores_overview":
+            this.setState({ scores: message.data });
             break;
 
           default:
@@ -213,7 +224,12 @@ export default class Home extends React.Component {
               }}
             >
               {activePanel === "status" && (
-                <StatusPanel status={this.state.status} ws={this.socket} />
+                <StatusPanel
+                  status={this.state.status}
+                  updates={this.state.runningUpdates}
+                  scores={this.state.scores}
+                  ws={this.socket}
+                />
               )}
             </div>
             <div

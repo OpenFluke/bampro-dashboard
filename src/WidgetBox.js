@@ -1,5 +1,8 @@
 import React from "react";
 
+import ScoreGraph from "./ScoreGraph";
+import ScoreOverlayGraph from "./ScoreOverlayGraph";
+
 export default class WidgetBox extends React.Component {
   constructor(props) {
     super(props);
@@ -53,18 +56,8 @@ export default class WidgetBox extends React.Component {
           </ul>
         );
 
-      case "cubeHosts":
-        return status?.cube_hosts ? (
-          <ul className="is-size-7">
-            {Object.entries(status.cube_hosts).map(([host, count]) => (
-              <li key={host}>
-                {host}: {count} cubes
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No cube host data available.</p>
-        );
+      case "scoreOverlay":
+        return <ScoreOverlayGraph scores={this.props.scores || []} />;
 
       case "singlePlanet":
         return planet ? (
@@ -81,6 +74,63 @@ export default class WidgetBox extends React.Component {
           </div>
         ) : (
           <p>No planet info available.</p>
+        );
+
+      case "scoreGraph":
+        return <ScoreGraph scores={this.props.scores || []} />;
+
+      case "runningUpdates":
+        const updates = this.props.updates || [];
+        const getStageColor = (stage) => {
+          switch (stage) {
+            case "Generating":
+              return "primary";
+            case "SpawningAgents":
+              return "info";
+            case "Running":
+              return "warning";
+            case "Finished":
+              return "success";
+            case "Cleaned":
+              return "dark";
+            default:
+              return "light";
+          }
+        };
+
+        return updates.length > 0 ? (
+          <table className="table is-striped is-fullwidth is-size-7">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Gen</th>
+                <th>Type</th>
+                <th>Mode</th>
+                <th>Var</th>
+                <th>Stage</th>
+                <th>Message</th>
+              </tr>
+            </thead>
+            <tbody>
+              {updates.map((u, i) => (
+                <tr key={i}>
+                  <td>{new Date(u.timestamp).toLocaleTimeString()}</td>
+                  <td>{u.generation}</td>
+                  <td>{u.num_type}</td>
+                  <td>{u.mode}</td>
+                  <td>{u.variant}</td>
+                  <td>
+                    <span className={`tag is-${getStageColor(u.stage)}`}>
+                      {u.stage}
+                    </span>
+                  </td>
+                  <td>{u.message}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className="has-text-grey-light">No experiment updates yet.</p>
         );
 
       default:
