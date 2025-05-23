@@ -1,7 +1,10 @@
 import React from "react";
+import ScoreGraphECharts from "./ScoreGraphECharts";
+import ScoreOverlayGraphECharts from "./ScoreOverlayGraphECharts";
+import BestScoreTable from "./BestScoreTable";
 
-import ScoreGraph from "./ScoreGraph";
-import ScoreOverlayGraph from "./ScoreOverlayGraph";
+//import ScoreGraph from "./ScoreGraph";
+//import ScoreOverlayGraph from "./ScoreOverlayGraph";
 
 export default class WidgetBox extends React.Component {
   constructor(props) {
@@ -57,7 +60,10 @@ export default class WidgetBox extends React.Component {
         );
 
       case "scoreOverlay":
-        return <ScoreOverlayGraph scores={this.props.scores || []} />;
+        return <ScoreOverlayGraphECharts scores={this.props.scores || []} />;
+
+      case "bestScores":
+        return <BestScoreTable scores={this.props.scores} />;
 
       case "singlePlanet":
         return planet ? (
@@ -77,7 +83,7 @@ export default class WidgetBox extends React.Component {
         );
 
       case "scoreGraph":
-        return <ScoreGraph scores={this.props.scores || []} />;
+        return <ScoreGraphECharts scores={this.props.scores || []} />;
 
       case "runningUpdates":
         const updates = this.props.updates || [];

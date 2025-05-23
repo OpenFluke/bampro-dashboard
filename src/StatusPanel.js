@@ -78,7 +78,7 @@ export default class StatusPanel extends React.Component {
         </div>
 
         <div className="columns is-multiline">
-          <div className="column is-one-third">
+          <div className="column is-half">
             <WidgetBox
               title="🛰️ System Overview"
               ws={ws}
@@ -87,7 +87,7 @@ export default class StatusPanel extends React.Component {
             />
           </div>
 
-          <div className="column is-one-third">
+          <div className="column is-half">
             <WidgetBox
               title="🪐 Planet List"
               ws={ws}
@@ -100,6 +100,14 @@ export default class StatusPanel extends React.Component {
             <WidgetBox
               title="📊 Score Overview"
               contentType="scoreOverlay"
+              scores={this.props.scores}
+            />
+          </div>
+
+          <div className="column is-full">
+            <WidgetBox
+              title="🏆 Best Scores by Numerical Type"
+              contentType="bestScores"
               scores={this.props.scores}
             />
           </div>

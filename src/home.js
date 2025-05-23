@@ -264,7 +264,12 @@ export default class Home extends React.Component {
                 overflowY: "auto",
               }}
             >
-              <ReportPanel />
+              <ReportPanel
+                status={this.state.status}
+                scores={this.state.scores}
+                updates={this.state.runningUpdates}
+                settings={this.state.settings}
+              />
             </div>
           </div>
         </div>
